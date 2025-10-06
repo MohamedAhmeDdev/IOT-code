@@ -1,106 +1,66 @@
-#include <WiFi.h>
-#include <WebServer.h>
 
-// WiFi credentials
+#include <WiFi.h>
+
+// Replace with your network credentials
 const char* ssid = "The palace_ext";
 const char* password = "elmiroyalty";
 
-// LED control
-const int ledPin = 4;
 
-WebServer server(80);
+WiFiServer server(80);  // Port 80 for HTTP
+int ledPin = 4;         // GPIO 4 for LED
 
 void setup() {
   Serial.begin(115200);
   pinMode(ledPin, OUTPUT);
   digitalWrite(ledPin, LOW);
 
-  // Connect to WiFi with better debugging
-  Serial.println();
-  Serial.println("Attempting to connect to WiFi...");
-  Serial.print("SSID: ");
-  Serial.println(ssid);
-  
+  Serial.println("Connecting to WiFi...");
   WiFi.begin(ssid, password);
-  
-  int attempts = 0;
-  while (WiFi.status() != WL_CONNECTED && attempts < 20) {
-    delay(1000);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
     Serial.print(".");
-    attempts++;
-    
-    if (attempts % 10 == 0) {
-      Serial.println();
-      Serial.print("Still trying... Status: ");
-      Serial.println(WiFi.status());
-    }
-  }
-  
-  Serial.println();
-  
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("WiFi connected successfully!");
-    Serial.print("IP address: ");
-    Serial.println(WiFi.localIP());
-  } else {
-    Serial.println("Failed to connect to WiFi!");
-    Serial.print("Status code: ");
-    Serial.println(WiFi.status());
-    return;
   }
 
-  // Setup server routes
-  server.on("/", handleRoot);
-  server.on("/on", handleOn);
-  server.on("/off", handleOff);
-  
+  Serial.println("");
+  Serial.println("WiFi connected!");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());  // Your web server address
+
   server.begin();
-  Serial.println("HTTP server started");
 }
 
 void loop() {
-  server.handleClient();
-}
+  WiFiClient client = server.available();   // Listen for incoming clients
 
-void handleRoot() {
-  String html = R"rawliteral(
-  <!DOCTYPE html>
-  <html>
-  <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-      body {font-family: Arial; text-align: center; margin-top: 50px;}
-      .button {
-        padding: 15px 25px;
-        font-size: 24px;
-        cursor: pointer;
-        margin: 10px;
-        border-radius: 12px;
-        border: none;
-      }
-      .on {background-color: #4CAF50; color: white;}
-      .off {background-color: #f44336; color: white;}
-    </style>
-  </head>
-  <body>
-    <h1>ESP32 LED Control</h1>
-    <button class="button on" onclick="location.href='/on'">LED ON</button>
-    <button class="button off" onclick="location.href='/off'">LED OFF</button>
-  </body>
-  </html>
-  )rawliteral";
-  
-  server.send(200, "text/html", html);
-}
+  if (client) {
+    Serial.println("New Client Connected.");
+    String request = client.readStringUntil('\r');
+    Serial.println(request);
+    client.flush();
 
-void handleOn() {
-  digitalWrite(ledPin, HIGH);
-  server.sendHeader("Location", "/");
-  server.send(303);
-}
+    // Control LED
+    if (request.indexOf("/LED=ON") != -1) {
+      digitalWrite(ledPin, HIGH);
+    } else if (request.indexOf("/LED=OFF") != -1) {
+      digitalWrite(ledPin, LOW);
+    }
 
-void handleOff() {
-  digitalWrite(ledPin, LOW);
-  server.sendHeader("Location", "/");
-  server.send(303);
+    // Build Web Page
+    String html = "<!DOCTYPE html><html>";
+    html += "<head><meta name='viewport' content='width=device-width, initial-scale=1'>";
+    html += "<title>ESP32 LED Control</title></head>";
+    html += "<body style='text-align:center; font-family:sans-serif;'>";
+    html += "<h2>ESP32 Web LED Controller 💡</h2>";
+    html += "<p><a href='/LED=ON'><button style='padding:10px 20px; background:green; color:white; border:none;'>TURN ON</button></a></p>";
+    html += "<p><a href='/LED=OFF'><button style='padding:10px 20px; background:red; color:white; border:none;'>TURN OFF</button></a></p>";
+    html += "</body></html>";
+
+    client.println("HTTP/1.1 200 OK");
+    client.println("Content-type:text/html");
+    client.println();
+    client.println(html);
+    client.stop();
+    Serial.println("Client disconnected.");
+  }
 }
