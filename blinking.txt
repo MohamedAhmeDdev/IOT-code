@@ -1,0 +1,36 @@
+void setup() {
+  pinMode(2, OUTPUT); // Set GPIO 2 as an output
+}
+
+void loop() {
+  digitalWrite(2, HIGH); // Turn LED ON
+  delay(1000);           // Wait for 1 second
+  digitalWrite(2, LOW);  // Turn LED OFF
+  delay(1000);           // Wait for 1 second
+}
+
+
+
+
+alternativly LED RED and GREEN 
+
+
+int greenLed = 5;  // Pin for green LED
+int redLed = 21;    // Pin for red LED
+
+void setup() {
+  pinMode(greenLed, OUTPUT);
+  pinMode(redLed, OUTPUT);
+}
+
+void loop() {
+  // Green ON, Red OFF
+  digitalWrite(greenLed, HIGH);
+  digitalWrite(redLed, LOW);
+  delay(1000);  // wait 1 second
+  
+  // Green OFF, Red ON
+  digitalWrite(greenLed, LOW);
+  digitalWrite(redLed, HIGH);
+  delay(1000);  // wait 1 second
+}

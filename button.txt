@@ -1,0 +1,24 @@
+const int buttonPin = 4;
+const int ledPin = 21;
+
+void setup() {
+  pinMode(ledPin, OUTPUT);
+  pinMode(buttonPin, INPUT_PULLUP);
+  Serial.begin(115200);
+  Serial.println("Testing button and LED...");
+}
+
+void loop() {
+  // Read button state
+  int btnState = digitalRead(buttonPin);
+  
+  // If button pressed (LOW), turn LED ON
+  if (btnState == LOW) {
+    digitalWrite(ledPin, HIGH);  // Turn LED ON
+    Serial.println("Button pressed - LED ON");
+  } else {
+    digitalWrite(ledPin, LOW);   // Turn LED OFF
+  }
+  
+  delay(100);
+} 
